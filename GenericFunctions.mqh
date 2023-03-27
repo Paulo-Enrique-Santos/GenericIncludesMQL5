@@ -4,7 +4,7 @@
 
 #property copyright "Paulo Enrique"
 #property link      "WhatsApp - (11)98979-4039"
-#property version   "1.04"
+#property version   "1.05"
 
 //INCLUDE E RESOURCE ############################################################################################################################################
 
@@ -495,10 +495,10 @@ ENUM_DEAL_TYPE getLastOrderType(string symbol, ulong magicNumber, ENUM_TIMEFRAME
             datetime dealTime          = (datetime) HistoryDealGetInteger(dealTicket, DEAL_TIME);
 
             if (dealSymbol == symbol && dealMagicNumber == magicNumber) { 
-               if (dealTime > controlTime && dealEntry == DEAL_ENTRY_IN) {
-                  controlTime = dealTime;
-                  dealLastType = (ENUM_DEAL_TYPE) dealType;
-               }
+                if (dealTime > controlTime && dealEntry == DEAL_ENTRY_IN) {
+                    controlTime = dealTime;
+                    dealLastType = (ENUM_DEAL_TYPE) dealType;
+                }
             }
         }
     }
@@ -554,4 +554,75 @@ ulong getTicketLastSellPositionOpen(string symbol, ulong magicNumber) {
     }
 
     return positionTicketLastPosition;
+}
+
+//RETORNA O VALOR DO DRAWDONW ##############################################################################################################################################
+double getDrawdownValue(string symbol, ulong magicNumber) {
+    static double profit;
+
+    double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
+    double historicProfit = getProfitHistoric(symbol, magicNumber, PERIOD_D1, false);
+    double profitTotal = positionsProfit + historicProfit;
+
+    if (profitTotal < 0 || profitTotal < profit) {
+        profit = profitTotal
+    }
+
+    return profit;
+}
+
+//BUSCA SE HOUVE OPERAÇÃO DE COMPRA NO DIA ##############################################################################################################################################
+bool hadBuyOperationOnTheDay(string symbol, ulong magicNumber) {
+    datetime end = TimeCurrent();
+    datetime start = iTime(symbol, PERIOD_D1, 0);
+
+    HistorySelect(start, end);
+    int dealsTotal = HistoryDealsTotal();
+
+    for (int i = dealsTotal - 1; i >= 0; i--) {
+        ulong dealTicket = HistoryDealGetTicket(i);
+
+        if (dealTicket > 0) {
+            string   dealSymbol        = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
+            ulong    dealMagicNumber   = HistoryDealGetInteger(dealTicket, DEAL_MAGIC);
+            ulong    dealType          = HistoryDealGetInteger(dealTicket, DEAL_TYPE);
+            ulong    dealEntry         = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+
+            if (dealSymbol == symbol && dealMagicNumber == magicNumber) { 
+                if (dealType == DEAL_TYPE_BUY && dealEntry == DEAL_ENTRY_IN) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+//BUSCA SE HOUVE OPERAÇÃO DE VENDA NO DIA ##############################################################################################################################################
+bool hadSellOperationOnTheDay(string symbol, ulong magicNumber) {
+    datetime end = TimeCurrent();
+    datetime start = iTime(symbol, PERIOD_D1, 0);
+
+    HistorySelect(start, end);
+    int dealsTotal = HistoryDealsTotal();
+
+    for (int i = dealsTotal - 1; i >= 0; i--) {
+        ulong dealTicket = HistoryDealGetTicket(i);
+
+        if (dealTicket > 0) {
+            string   dealSymbol        = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
+            ulong    dealMagicNumber   = HistoryDealGetInteger(dealTicket, DEAL_MAGIC);
+            ulong    dealType          = HistoryDealGetInteger(dealTicket, DEAL_TYPE);
+            ulong    dealEntry         = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+
+            if (dealSymbol == symbol && dealMagicNumber == magicNumber) { 
+                if (dealType == DEAL_TYPE_SELL && dealEntry == DEAL_ENTRY_IN) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
