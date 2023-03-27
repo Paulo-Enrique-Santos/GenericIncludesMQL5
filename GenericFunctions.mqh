@@ -4,7 +4,7 @@
 
 #property copyright "Paulo Enrique"
 #property link      "WhatsApp - (11)98979-4039"
-#property version   "1.03"
+#property version   "1.04"
 
 //INCLUDE E RESOURCE ############################################################################################################################################
 
@@ -22,10 +22,17 @@ bool buyMarket(ulong magicNumber, string symbol, double volume, double take, dou
     
     TradeGenericFunctions.SetExpertMagicNumber(magicNumber);
 
-    double st = SymbolInfoGenericFunctions.Ask() - stop;
-    double tk = SymbolInfoGenericFunctions.Ask() + take;
+    double st = SymbolInfoGenericFunctions.Ask() - (stop * SymbolInfoGenericFunctions.Point());
+    double tk = SymbolInfoGenericFunctions.Ask() + (take * SymbolInfoGenericFunctions.Point());
 
-    TradeGenericFunctions.Buy(volume, symbol, SymbolInfoGenericFunctions.Ask(), SymbolInfoGenericFunctions.NormalizePrice(st), SymbolInfoGenericFunctions.NormalizePrice(tk), comment);
+    TradeGenericFunctions.Buy(
+        volume, 
+        symbol, 
+        SymbolInfoGenericFunctions.Ask(), 
+        SymbolInfoGenericFunctions.NormalizePrice(st), 
+        SymbolInfoGenericFunctions.NormalizePrice(tk), 
+        comment
+    );
 
     if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE) {
         Print("ERRO AO EXECUTAR COMPRA A MERCADO CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
@@ -46,10 +53,17 @@ bool sellMarket(ulong magicNumber, string symbol, double volume, double take, do
     
     TradeGenericFunctions.SetExpertMagicNumber(magicNumber);
 
-    double st = SymbolInfoGenericFunctions.Bid() + stop;
-    double tk = SymbolInfoGenericFunctions.Bid() - take;    
+    double st = SymbolInfoGenericFunctions.Bid() + (stop * SymbolInfoGenericFunctions.Point());
+    double tk = SymbolInfoGenericFunctions.Bid() - (take * SymbolInfoGenericFunctions.Point());    
 
-    TradeGenericFunctions.Sell(volume, symbol, SymbolInfoGenericFunctions.Bid(), SymbolInfoGenericFunctions.NormalizePrice(st), SymbolInfoGenericFunctions.NormalizePrice(tk), comment);
+    TradeGenericFunctions.Sell(
+        volume, 
+        symbol, 
+        SymbolInfoGenericFunctions.Bid(), 
+        SymbolInfoGenericFunctions.NormalizePrice(st), 
+        SymbolInfoGenericFunctions.NormalizePrice(tk), 
+        comment
+    );
 
     if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE) {
         Print("ERRO AO EXECUTAR VENDA A MERCADO CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
