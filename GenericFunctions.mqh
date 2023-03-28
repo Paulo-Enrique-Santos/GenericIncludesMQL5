@@ -22,8 +22,8 @@ bool buyMarket(ulong magicNumber, string symbol, double volume, double take, dou
     
     TradeGenericFunctions.SetExpertMagicNumber(magicNumber);
 
-    double st = SymbolInfoGenericFunctions.Ask() - (stop * SymbolInfoGenericFunctions.Point());
-    double tk = SymbolInfoGenericFunctions.Ask() + (take * SymbolInfoGenericFunctions.Point());
+    double st = stop == 0 ? 0 : SymbolInfoGenericFunctions.Ask() - (stop * SymbolInfoGenericFunctions.Point());
+    double tk = take == 0 ? 0 : SymbolInfoGenericFunctions.Ask() + (take * SymbolInfoGenericFunctions.Point());
 
     TradeGenericFunctions.Buy(
         volume, 
@@ -53,8 +53,8 @@ bool sellMarket(ulong magicNumber, string symbol, double volume, double take, do
     
     TradeGenericFunctions.SetExpertMagicNumber(magicNumber);
 
-    double st = SymbolInfoGenericFunctions.Bid() + (stop * SymbolInfoGenericFunctions.Point());
-    double tk = SymbolInfoGenericFunctions.Bid() - (take * SymbolInfoGenericFunctions.Point());    
+    double st = stop == 0 ? 0 : SymbolInfoGenericFunctions.Bid() + (stop * SymbolInfoGenericFunctions.Point());
+    double tk = take == 0 ? 0 : SymbolInfoGenericFunctions.Bid() - (take * SymbolInfoGenericFunctions.Point());    
 
     TradeGenericFunctions.Sell(
         volume, 
@@ -565,7 +565,7 @@ double getDrawdownValue(string symbol, ulong magicNumber) {
     double profitTotal = positionsProfit + historicProfit;
 
     if (profitTotal < 0 || profitTotal < profit) {
-        profit = profitTotal
+        profit = profitTotal;
     }
 
     return profit;
