@@ -4,7 +4,7 @@
 
 #property copyright "Paulo Enrique"
 #property link      "WhatsApp - (11)98979-4039"
-#property version   "1.05"
+#property version   "1.06"
 
 //INCLUDE E RESOURCE ############################################################################################################################################
 
@@ -522,6 +522,7 @@ ulong getTicketLastBuyPositionOpen(string symbol, ulong magicNumber) {
 
         if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_BUY) {
             if (positionOpenTime > positionLastDatetime) {
+               Print(positionTicket);
                 positionLastDatetime = positionOpenTime;
                 positionTicketLastPosition = positionTicket;    
             }
@@ -625,4 +626,102 @@ bool hadSellOperationOnTheDay(string symbol, ulong magicNumber) {
     }
 
     return false;
+}
+
+//BUSCA O PREÇO MÉDIO DE OPERAÇÕES COMPRADAS ##############################################################################################################################################
+double getBuyPositionsAveragePrice(string symbol, ulong magicNumber) {
+    double totalVolume = 0;
+    double totalPrices = 0;
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--) {
+        PositionSelectByTicket(PositionGetTicket(i));
+
+        string   positionSymbol       = PositionGetSymbol(i);
+        ulong    positionMagicNumber  = PositionGetInteger(POSITION_MAGIC);
+        ulong    positionType         = PositionGetInteger(POSITION_TYPE);
+        double   positionVolume       = PositionGetDouble(POSITION_VOLUME);
+        double   positionPrice        = PositionGetDouble(POSITION_PRICE_OPEN);
+
+        if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_BUY) {
+            totalVolume += positionVolume;
+            totalPrices += (positionPrice * positionVolume);
+        }
+    }
+
+    return totalPrices / totalVolume;
+}
+
+//BUSCA O PREÇO MÉDIO DE OPERAÇÕES VENDAS ##############################################################################################################################################
+double getSellPositionsAveragePrice(string symbol, ulong magicNumber) {
+    double totalVolume = 0;
+    double totalPrices = 0;
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--) {
+        PositionSelectByTicket(PositionGetTicket(i));
+
+        string   positionSymbol       = PositionGetSymbol(i);
+        ulong    positionMagicNumber  = PositionGetInteger(POSITION_MAGIC);
+        ulong    positionType         = PositionGetInteger(POSITION_TYPE);
+        double   positionVolume       = PositionGetDouble(POSITION_VOLUME);
+        double   positionPrice        = PositionGetDouble(POSITION_PRICE_OPEN);
+
+        if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_SELL) {
+            totalVolume += positionVolume;
+            totalPrices += (positionPrice * positionVolume);
+        }
+    }
+
+    return totalPrices / totalVolume;
+}
+
+//ALTERAR TAKE DAS ORDENS COMPRADAS ##############################################################################################################################################
+void changeTakeBuyPositions(string symbol, ulong magicNumber, double averagePrice, double take) {
+    SymbolInfoGenericFunctions.Refresh();
+    SymbolInfoGenericFunctions.RefreshRates();
+    
+    double tp = SymbolInfoGenericFunctions.NormalizePrice(averagePrice + (take * SymbolInfoGenericFunctions.Point()));
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--) {
+        PositionSelectByTicket(PositionGetTicket(i));
+
+        string   positionSymbol       = PositionGetSymbol(i);
+        ulong    positionMagicNumber  = PositionGetInteger(POSITION_MAGIC);
+        ulong    positionType         = PositionGetInteger(POSITION_TYPE);
+        double   positionPriceOpen    = PositionGetDouble(POSITION_PRICE_OPEN);
+        double   positionTake         = PositionGetDouble(POSITION_TP);
+        double   positionStop         = PositionGetDouble(POSITION_SL);
+        ulong    positionTicket       = PositionGetTicket(i);
+
+        if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_BUY) {
+            if (positionTake != tp && averagePrice != 0 && SymbolInfoGenericFunctions.Bid() <= tp) {
+               TradeGenericFunctions.PositionModify(positionTicket, positionStop, tp);
+            }
+        }
+    }
+}
+
+//ALTERAR TAKE DAS ORDENS VENDIDAS ##############################################################################################################################################
+void changeTakeSellPositions(string symbol, ulong magicNumber, double averagePrice, double take) {
+    SymbolInfoGenericFunctions.Refresh();
+    SymbolInfoGenericFunctions.RefreshRates();
+    
+    double tp = SymbolInfoGenericFunctions.NormalizePrice(averagePrice - (take * SymbolInfoGenericFunctions.Point()));
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--) {
+        PositionSelectByTicket(PositionGetTicket(i));
+
+        string   positionSymbol       = PositionGetSymbol(i);
+        ulong    positionMagicNumber  = PositionGetInteger(POSITION_MAGIC);
+        ulong    positionType         = PositionGetInteger(POSITION_TYPE);
+        double   positionPriceOpen    = PositionGetDouble(POSITION_PRICE_OPEN);
+        double   positionTake         = PositionGetDouble(POSITION_TP);
+        double   positionStop         = PositionGetDouble(POSITION_SL);
+        ulong    positionTicket       = PositionGetTicket(i);
+
+        if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_SELL) {
+            if (positionTake != tp && averagePrice != 0 && SymbolInfoGenericFunctions.Ask() >= tp) {
+               TradeGenericFunctions.PositionModify(positionTicket, positionStop, tp);
+            }
+        }
+    }
 }
