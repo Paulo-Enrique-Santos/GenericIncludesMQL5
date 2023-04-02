@@ -4,7 +4,7 @@
 
 #property copyright "Paulo Enrique"
 #property link      "WhatsApp - (11)98979-4039"
-#property version   "1.06"
+#property version   "1.07"
 
 //INCLUDE E RESOURCE ############################################################################################################################################
 
@@ -558,11 +558,11 @@ ulong getTicketLastSellPositionOpen(string symbol, ulong magicNumber) {
 }
 
 //RETORNA O VALOR DO DRAWDONW ##############################################################################################################################################
-double getDrawdownValue(string symbol, ulong magicNumber) {
+double getDrawdownValue(string symbol, ulong magicNumber, bool isHistoric) {
     static double profit;
 
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
-    double historicProfit = getProfitHistoric(symbol, magicNumber, PERIOD_D1, false);
+    double historicProfit = getProfitHistoric(symbol, magicNumber, PERIOD_D1, isHistoric);
     double profitTotal = positionsProfit + historicProfit;
 
     if (profitTotal < 0 || profitTotal < profit) {
