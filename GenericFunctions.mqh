@@ -381,7 +381,7 @@ bool isOpenningTime(string open) {
 bool isNewCandle(string symbol, ENUM_TIMEFRAMES timeframe) {
     static int bars;
 
-    if (bars != Bars(symbol, timeframe)) {
+    if (bars != Bars(symbol, timeframe) && bars > 0) {
         bars = Bars(symbol, timeframe);
         return true;
     }
