@@ -558,7 +558,7 @@ ulong getTicketLastSellPositionOpen(string symbol, ulong magicNumber) {
 }
 
 //RETORNA O VALOR DO DRAWDONW ##############################################################################################################################################
-double getDrawdownValue(string symbol, ulong magicNumber, bool isHistoric) {
+double getDrawdownValue(string symbol, ulong magicNumber) {
     static double profit;
 
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
