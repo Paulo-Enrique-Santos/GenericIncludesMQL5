@@ -562,11 +562,9 @@ double getDrawdownValue(string symbol, ulong magicNumber, bool isHistoric) {
     static double profit;
 
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
-    double historicProfit = getProfitHistoric(symbol, magicNumber, PERIOD_D1, isHistoric);
-    double profitTotal = positionsProfit + historicProfit;
 
     if (profitTotal < 0 || profitTotal < profit) {
-        profit = profitTotal;
+        profit = positionsProfit;
     }
 
     return profit;
