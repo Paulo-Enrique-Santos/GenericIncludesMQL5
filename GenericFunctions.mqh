@@ -381,7 +381,7 @@ bool isOpenningTime(string open) {
 bool isNewCandle(string symbol, ENUM_TIMEFRAMES timeframe) {
     static int bars;
 
-    if (bars != Bars(symbol, timeframe)) {
+    if (bars != Bars(symbol, timeframe) && bars > 0) {
         bars = Bars(symbol, timeframe);
         return true;
     }
@@ -558,15 +558,13 @@ ulong getTicketLastSellPositionOpen(string symbol, ulong magicNumber) {
 }
 
 //RETORNA O VALOR DO DRAWDONW ##############################################################################################################################################
-double getDrawdownValue(string symbol, ulong magicNumber, bool isHistoric) {
+double getDrawdownValue(string symbol, ulong magicNumber) {
     static double profit;
 
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
-    double historicProfit = getProfitHistoric(symbol, magicNumber, PERIOD_D1, isHistoric);
-    double profitTotal = positionsProfit + historicProfit;
 
-    if (profitTotal < 0 || profitTotal < profit) {
-        profit = profitTotal;
+    if (positionsProfit < 0 || positionsProfit < profit) {
+        profit = positionsProfit;
     }
 
     return profit;
