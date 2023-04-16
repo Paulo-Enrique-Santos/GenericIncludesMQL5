@@ -10,6 +10,7 @@
 
 #include <Trade\Trade.mqh>
 #include <Trade\SymbolInfo.mqh>
+#include <Robos-GenericIncludes\GenericEnums.mqh>
 
 //VARIÁVEIS DE INCLUDES ############################################################################################################################################
 CTrade          TradeGenericFunctions;
@@ -385,6 +386,10 @@ bool isNewCandle(string symbol, ENUM_TIMEFRAMES timeframe) {
         bars = Bars(symbol, timeframe);
         return true;
     }
+    
+    if (bars == 0) {
+      bars = Bars(symbol, timeframe);
+    }
 
     return false;
 }
@@ -563,7 +568,22 @@ double getDrawdownValue(string symbol, ulong magicNumber) {
 
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
 
-    if (positionsProfit < 0 || positionsProfit < profit) {
+    if ((positionsProfit < 0 && profit == 0) || positionsProfit < profit) {
+        profit = positionsProfit;
+    }
+
+    return profit;
+}
+
+//RETORNA O VALOR DO DRAWDONW DIARIO ##############################################################################################################################################
+double getDailyDrawdownValue(string symbol, ulong magicNumber) {
+    static double profit;
+    
+    if (isNewCandle(symbol, PERIOD_D1)) {profit = 0;}
+
+    double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
+
+    if ((positionsProfit < 0 && profit == 0) || positionsProfit < profit) {
         profit = positionsProfit;
     }
 
@@ -722,4 +742,96 @@ void changeTakeSellPositions(string symbol, ulong magicNumber, double averagePri
             }
         }
     }
+}
+
+//VERIFICA SE O ATIVO AINDA ESTA EM LEILAO ##############################################################################################################################################
+bool isAuction(string symbol, ENUM_TIMEFRAMES timeframe) {
+MqlDateTime time_candle_previous, time_candle_current, time_current;
+   
+//DEFININDO HORÁRIOS DOS CANDLES
+   TimeToStruct(TimeCurrent(), time_current); 
+   TimeToStruct(iTime(symbol, timeframe, 0), time_candle_current);
+   TimeToStruct(iTime(symbol, timeframe, 1), time_candle_previous);
+   
+//VARIÁVEIS
+   double highCandle = iHigh(symbol, timeframe, 0);
+   double lowCandle = iLow(symbol, timeframe, 0);
+   
+//VERIFICAÇÕES
+   if (time_candle_current.day != time_candle_previous.day) {
+      if (highCandle != lowCandle) {
+         return false;
+      }
+   } else {
+      if (time_current.day == time_candle_current.day) {
+         return false;
+      }
+   }
+   return true;
+}
+
+//ENVIAR ORDEM ##############################################################################################################################################
+bool sendOrders(ENUM_OPERATIONS_TYPE type, double preco, string symbol, double lote, double take, double stop){
+   SymbolInfoGenericFunctions.Refresh();
+   SymbolInfoGenericFunctions.RefreshRates();
+   
+   double valorAtual = SymbolInfoGenericFunctions.Last(); 
+   
+   double takeProfitLocal = 0;
+   double stopLossLocal = 0;
+   
+   if (type == sell) {
+      takeProfitLocal = take != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco - take) : take;
+      stopLossLocal = stop != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco + stop) : stop;
+      
+      if (SymbolInfoGenericFunctions.Bid() > preco) {      
+         TradeGenericFunctions.SellStop(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM SELLSTOP");
+         
+         if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
+            Print("ERRO AO ENVIAR ORDEM DE VENDA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+         } else {
+            Print("ORDEM DE VENDA ENVIADA NO PREÇO: ", preco);
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+         }
+      } else {
+         TradeGenericFunctions.SellLimit(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM SELLLIMIT");
+         
+         if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
+            Print("ERRO AO ENVIAR ORDEM DE VENDA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+         } else {
+            Print("ORDEM DE VENDA ENVIADA NO PREÇO: ", preco);
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+         }      
+      }
+   } else {
+      takeProfitLocal = take != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco + take) : take;
+      stopLossLocal = stop != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco - stop) : stop;
+      
+      
+      if (SymbolInfoGenericFunctions.Bid() > preco) {      
+         TradeGenericFunctions.BuyLimit(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM BUYLIMIT");
+         
+         if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
+            Print("ERRO AO ENVIAR ORDEM DE COMPRA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+         } else {
+            Print("ORDEM DE COMPRA ENVIADA NO PREÇO: ", preco);
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+         }
+      } else {
+         TradeGenericFunctions.BuyStop(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM BUYSTOP");
+         
+         if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
+            Print("ERRO AO ENVIAR ORDEM DE COMPRA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+         } else {
+            Print("ORDEM DE COMPRA ENVIADA NO PREÇO: ", preco);
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+         }      
+      }
+   }
+   
+   return false;
 }

@@ -1,11 +1,11 @@
 //ENUM #################################################################################################################################################
 
-enum BOOLEAN_TYPE {
+enum ENUM_BOOLEAN_TYPE {
     yes,                    // SIM
     no                      // NÃO
 };
 
-enum OPERATIONS_TYPE {
+enum ENUM_OPERATIONS_TYPE {
     buy,                    // Compra
     sell,                   // Venda
     all                     // Ambos Sentidos
