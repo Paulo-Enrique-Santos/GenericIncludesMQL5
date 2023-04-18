@@ -82,7 +82,6 @@ bool sellMarket(ulong magicNumber, string symbol, double volume, double take, do
 bool closeAllPositions(string symbol, ulong magicNumber) {
     for (int i = PositionsTotal() - 1 ; i >= 0; i--) {
         if (!PositionSelectByTicket(PositionGetTicket(i))) {
-            Print("PROBLEMAS PARA SELECIONAR UMA POSIÇÃO NA FUNÇÃO closeAllPositions!");
             return false;
         }
 
@@ -173,7 +172,6 @@ double getProfitAllPositions(string symbol, ulong magicNumber, ENUM_POSITION_TYP
 bool isPositioned(string symbol, ulong magicNumber, ENUM_POSITION_TYPE type) {
     for (int i = PositionsTotal() - 1; i >= 0; i--) {
         if (!PositionSelectByTicket(PositionGetTicket(i))) {
-            Print("PROBLEMAS PARA SELECIONAR UMA POSIÇÃO NA FUNÇÃO isPositioned!");
             return false;
         }
 
@@ -423,7 +421,6 @@ double getPositionPriceOpenByTicket(string symbol, ulong magicNumber, ulong tick
     if (!PositionSelect(symbol)) {return 0;}
 
     if (!PositionSelectByTicket(ticket)) {
-        Print("PROBLEMAS PARA SELECIONAR UMA POSIÇÃO NA FUNÇÃO getPositionPriceOpenByTicket");
         return 0;
     }
 
@@ -443,7 +440,6 @@ ENUM_POSITION_TYPE getPositionTypeByTicket(string symbol, ulong magicNumber, ulo
     if (!PositionSelect(symbol)) {return NULL;}
 
     if (!PositionSelectByTicket(ticket)) {
-        Print("PROBLEMAS PARA SELECIONAR UMA POSIÇÃO NA FUNÇÃO getPositionTypeByTicket");
         return NULL;
     }
 
@@ -463,7 +459,6 @@ double getPositionVolumeByTicket(string symbol, ulong magicNumber, ulong ticket)
     if (!PositionSelect(symbol)) {return 0;}
 
     if (!PositionSelectByTicket(ticket)) {
-        Print("PROBLEMAS PARA SELECIONAR UMA POSIÇÃO NA FUNÇÃO getPositionTypeByTicket");
         return 0;
     }
 
@@ -578,8 +573,16 @@ double getDrawdownValue(string symbol, ulong magicNumber) {
 //RETORNA O VALOR DO DRAWDONW DIARIO ##############################################################################################################################################
 double getDailyDrawdownValue(string symbol, ulong magicNumber) {
     static double profit;
+    static int bars;
+
+    if (bars != Bars(symbol, PERIOD_D1) && bars > 0) {
+        bars = Bars(symbol, PERIOD_D1);
+        profit = 0;
+    }
     
-    if (isNewCandle(symbol, PERIOD_D1)) {profit = 0;}
+    if (bars == 0) {
+      bars = Bars(symbol, PERIOD_D1);
+    }
 
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
 
