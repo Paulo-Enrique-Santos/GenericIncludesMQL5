@@ -4,7 +4,7 @@
 
 #property copyright "Paulo Enrique"
 #property link      "WhatsApp - (11)98979-4039"
-#property version   "1.07"
+#property version   "1.08"
 
 //INCLUDE E RESOURCE ############################################################################################################################################
 
@@ -183,6 +183,26 @@ bool isPositioned(string symbol, ulong magicNumber, ENUM_POSITION_TYPE type) {
             if (type == positionType) {
                 return true;
             }
+        }
+    }
+
+    return false;
+}
+
+//VERIRICAR SE TEM ALGUMA POSIÇÃO ABERTA ##############################################################################################################################################
+bool isPendingOrder(string symbol, ulong magicNumber) {
+    StringToUpper(symbol);
+    
+    for (int i = OrdersTotal() - 1; i >= 0; i--) {
+        if (!OrderSelect(OrderGetTicket(i))) {
+            return false;
+        }
+
+        string   orderSymbol       = OrderGetString(ORDER_SYMBOL);
+        ulong    orderMagicNumber  = OrderGetInteger(ORDER_MAGIC);
+
+        if (orderMagicNumber == magicNumber && orderSymbol == symbol) {
+             return true;
         }
     }
 
@@ -522,7 +542,6 @@ ulong getTicketLastBuyPositionOpen(string symbol, ulong magicNumber) {
 
         if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_BUY) {
             if (positionOpenTime > positionLastDatetime) {
-               Print(positionTicket);
                 positionLastDatetime = positionOpenTime;
                 positionTicketLastPosition = positionTicket;    
             }
@@ -774,9 +793,12 @@ MqlDateTime time_candle_previous, time_candle_current, time_current;
 }
 
 //ENVIAR ORDEM ##############################################################################################################################################
-bool sendOrders(ENUM_OPERATIONS_TYPE type, double preco, string symbol, double lote, double take, double stop){
+bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double preco, string symbol, double lote, double take, double stop){
+   SymbolInfoGenericFunctions.Name(symbol);
    SymbolInfoGenericFunctions.Refresh();
    SymbolInfoGenericFunctions.RefreshRates();
+   
+   TradeGenericFunctions.SetExpertMagicNumber(magicNumber);
    
    double valorAtual = SymbolInfoGenericFunctions.Last(); 
    
