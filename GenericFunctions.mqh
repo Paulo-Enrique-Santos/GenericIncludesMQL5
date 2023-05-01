@@ -356,7 +356,6 @@ bool isClosingTime(string close){
     TimeToStruct(StringToTime(close), closeTime);
 
     if (currentTime.hour * 60 + currentTime.min > closeTime.hour * 60 + closeTime.min) {
-        Comment("O HORÁRIO DE FECHAMENTO FOI ATINGIDO");
         return true;
     }
 
@@ -373,7 +372,6 @@ bool isPauseTime(string pause, string free) {
 
     if (currentTime.hour * 60 + currentTime.min > pauseTime.hour * 60 + pauseTime.min &&
         currentTime.hour * 60 + currentTime.min < freeTime.hour * 60 + freeTime.min) {
-            Comment("O ROBÔ ESTÁ NO HORÁRIO DE PAUSA");
             return true;
     }
 
@@ -389,7 +387,6 @@ bool isOpenningTime(string open) {
     TimeToStruct(StringToTime(open), openTime);
 
     if (currentTime.hour * 60 + currentTime.min < openTime.hour * 60 + openTime.min) {
-        Comment("ESPERANDO HORÁRIO DE ABERTURA DO ROBÔ");
         return false;
     }
 
