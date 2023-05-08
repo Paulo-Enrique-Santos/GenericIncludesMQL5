@@ -4,13 +4,13 @@
 
 #property copyright "Paulo Enrique"
 #property link      "WhatsApp - (11)98979-4039"
-#property version   "1.08"
+#property version   "1.09"
 
 //INCLUDE E RESOURCE ############################################################################################################################################
 
 #include <Trade\Trade.mqh>
 #include <Trade\SymbolInfo.mqh>
-#include <Robos-GenericIncludes\GenericEnums.mqh>
+#include <GenericIncludesMQL5\GenericEnums.mqh>
 
 //VARIÁVEIS DE INCLUDES ############################################################################################################################################
 CTrade          TradeGenericFunctions;
@@ -190,7 +190,7 @@ bool isPositioned(string symbol, ulong magicNumber, ENUM_POSITION_TYPE type) {
 }
 
 //VERIRICAR SE TEM ALGUMA POSIÇÃO ABERTA ##############################################################################################################################################
-bool isPendingOrder(string symbol, ulong magicNumber) {
+bool isPendingOrder(string symbol, ulong magicNumber, ENUM_OPERATIONS_TYPE type) {
     StringToUpper(symbol);
     
     for (int i = OrdersTotal() - 1; i >= 0; i--) {
@@ -200,9 +200,20 @@ bool isPendingOrder(string symbol, ulong magicNumber) {
 
         string   orderSymbol       = OrderGetString(ORDER_SYMBOL);
         ulong    orderMagicNumber  = OrderGetInteger(ORDER_MAGIC);
+        ulong    orderType         = OrderGetInteger(ORDER_TYPE);
 
         if (orderMagicNumber == magicNumber && orderSymbol == symbol) {
-             return true;
+            if (type == all) {
+               return true;
+            }
+            
+            if (type == buy && (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_BUY_STOP)) {
+               return true;
+            }
+            
+            if (type == sell && (orderType == ORDER_TYPE_SELL_LIMIT || orderType == ORDER_TYPE_SELL_STOP)) {
+               return true;
+            }
         }
     }
 
