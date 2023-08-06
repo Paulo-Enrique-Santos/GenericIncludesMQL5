@@ -103,6 +103,42 @@ bool closeAllPositions(string symbol, ulong magicNumber) {
     return true;
 }
 
+//FECHAR TODAS AS ORDENS PENDENTES ##############################################################################################################################################
+bool closeAllPendingOrders(string symbol, ulong magicNumber, ENUM_OPERATIONS_TYPE type) {
+    for (int i = OrdersTotal() - 1 ; i >= 0; i--) {
+        if (!OrderSelect(OrderGetTicket(i))) {
+            return false;
+        }
+
+        string   orderSymbol       = OrderGetString(ORDER_SYMBOL);
+        ulong    orderMagicNumber  = OrderGetInteger(ORDER_MAGIC);
+        ulong    orderTicket       = OrderGetInteger(ORDER_TICKET);
+        ulong    orderType         = OrderGetInteger(ORDER_TYPE);
+
+        if (orderMagicNumber == magicNumber && orderSymbol == symbol) {
+            if (type == all) {
+               TradeGenericFunctions.OrderDelete(orderTicket);
+            }
+            
+            if (type == sell && (orderType == ORDER_TYPE_SELL_LIMIT || orderType == ORDER_TYPE_SELL_STOP)) {
+               TradeGenericFunctions.OrderDelete(orderTicket);
+            }
+            
+            if (type == buy && (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_BUY_STOP)) {
+               TradeGenericFunctions.OrderDelete(orderTicket);
+            }
+
+            if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE) {
+                Print("PROBLEMAS PARA FECHAR A ORDEM COM TICKET: ", orderTicket);
+                Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 //VERIRICA A QUANTIDADE DE POSIÇOES ##############################################################################################################################################
 int getTotalPositions(string symbol, ulong magicNumber, ENUM_POSITION_TYPE type) {
     int positionsTotal = 0; 
@@ -722,6 +758,58 @@ double getSellPositionsAveragePrice(string symbol, ulong magicNumber) {
     return totalPrices / totalVolume;
 }
 
+//ALTERAR STOP DAS ORDENS COMPRADAS ##############################################################################################################################################
+void changeStopBuyPositions(string symbol, ulong magicNumber, double averagePrice, double stop) {
+    SymbolInfoGenericFunctions.Refresh();
+    SymbolInfoGenericFunctions.RefreshRates();
+    
+    double st = SymbolInfoGenericFunctions.NormalizePrice(averagePrice - (stop * SymbolInfoGenericFunctions.Point()));
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--) {
+        PositionSelectByTicket(PositionGetTicket(i));
+
+        string   positionSymbol       = PositionGetSymbol(i);
+        ulong    positionMagicNumber  = PositionGetInteger(POSITION_MAGIC);
+        ulong    positionType         = PositionGetInteger(POSITION_TYPE);
+        double   positionPriceOpen    = PositionGetDouble(POSITION_PRICE_OPEN);
+        double   positionTake         = PositionGetDouble(POSITION_TP);
+        double   positionStop         = PositionGetDouble(POSITION_SL);
+        ulong    positionTicket       = PositionGetTicket(i);
+
+        if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_BUY) {
+            if (positionStop != st && averagePrice != 0 && SymbolInfoGenericFunctions.Bid() >= st) {
+               TradeGenericFunctions.PositionModify(positionTicket, st, positionTake);
+            }
+        }
+    }
+}
+
+//ALTERAR STOP DAS ORDENS VENDIDAS ##############################################################################################################################################
+void changeStopSellPositions(string symbol, ulong magicNumber, double averagePrice, double stop) {
+    SymbolInfoGenericFunctions.Refresh();
+    SymbolInfoGenericFunctions.RefreshRates();
+    
+    double st = SymbolInfoGenericFunctions.NormalizePrice(averagePrice + (stop * SymbolInfoGenericFunctions.Point()));
+
+    for (int i = PositionsTotal() - 1; i >= 0; i--) {
+        PositionSelectByTicket(PositionGetTicket(i));
+
+        string   positionSymbol       = PositionGetSymbol(i);
+        ulong    positionMagicNumber  = PositionGetInteger(POSITION_MAGIC);
+        ulong    positionType         = PositionGetInteger(POSITION_TYPE);
+        double   positionPriceOpen    = PositionGetDouble(POSITION_PRICE_OPEN);
+        double   positionTake         = PositionGetDouble(POSITION_TP);
+        double   positionStop         = PositionGetDouble(POSITION_SL);
+        ulong    positionTicket       = PositionGetTicket(i);
+
+        if (positionMagicNumber == magicNumber && positionSymbol == symbol && positionType == POSITION_TYPE_SELL) {
+            if (positionStop != st && averagePrice != 0 && SymbolInfoGenericFunctions.Ask() <= st) {
+               TradeGenericFunctions.PositionModify(positionTicket, st, positionTake);
+            }
+        }
+    }
+}
+
 //ALTERAR TAKE DAS ORDENS COMPRADAS ##############################################################################################################################################
 void changeTakeBuyPositions(string symbol, ulong magicNumber, double averagePrice, double take) {
     SymbolInfoGenericFunctions.Refresh();
@@ -801,21 +889,21 @@ MqlDateTime time_candle_previous, time_candle_current, time_current;
 }
 
 //ENVIAR ORDEM ##############################################################################################################################################
-bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double preco, string symbol, double lote, double take, double stop){
+bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double precoBruto, string symbol, double lote, double take, double stop, bool stopFixedPrice = false){
    SymbolInfoGenericFunctions.Name(symbol);
    SymbolInfoGenericFunctions.Refresh();
    SymbolInfoGenericFunctions.RefreshRates();
    
    TradeGenericFunctions.SetExpertMagicNumber(magicNumber);
    
-   double valorAtual = SymbolInfoGenericFunctions.Last(); 
-   
+   double valorAtual = SymbolInfoGenericFunctions.Last();
+   double preco = SymbolInfoGenericFunctions.NormalizePrice(precoBruto);
    double takeProfitLocal = 0;
    double stopLossLocal = 0;
    
    if (type == sell) {
       takeProfitLocal = take != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco - take) : take;
-      stopLossLocal = stop != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco + stop) : stop;
+      stopLossLocal = stop != 0 && !stopFixedPrice ? SymbolInfoGenericFunctions.NormalizePrice(preco + stop) : stop;
       
       if (SymbolInfoGenericFunctions.Bid() > preco) {      
          TradeGenericFunctions.SellStop(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM SELLSTOP");
@@ -840,7 +928,7 @@ bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double preco, stri
       }
    } else {
       takeProfitLocal = take != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco + take) : take;
-      stopLossLocal = stop != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco - stop) : stop;
+      stopLossLocal = stop != 0 && !stopFixedPrice ? SymbolInfoGenericFunctions.NormalizePrice(preco - stop) : stop;
       
       
       if (SymbolInfoGenericFunctions.Bid() > preco) {      
