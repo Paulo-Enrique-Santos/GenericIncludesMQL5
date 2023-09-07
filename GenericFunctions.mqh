@@ -900,6 +900,9 @@ bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double precoBruto,
    double preco = SymbolInfoGenericFunctions.NormalizePrice(precoBruto);
    double takeProfitLocal = 0;
    double stopLossLocal = 0;
+   static bool isExecuting;
+   
+   if (isExecuting) {return false;}
    
    if (type == sell) {
       takeProfitLocal = take != 0 ? SymbolInfoGenericFunctions.NormalizePrice(preco - take) : take;
@@ -907,23 +910,37 @@ bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double precoBruto,
       
       if (SymbolInfoGenericFunctions.Bid() > preco) {      
          TradeGenericFunctions.SellStop(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM SELLSTOP");
+         isExecuting = true;
          
          if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
             Print("ERRO AO ENVIAR ORDEM DE VENDA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
-            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());  
+            
+            isExecuting = false;    
+            return false; 
          } else {
             Print("ORDEM DE VENDA ENVIADA NO PREÇO: ", preco);
             Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+            
+            isExecuting = false;
+            return true;
          }
       } else {
          TradeGenericFunctions.SellLimit(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM SELLLIMIT");
+         isExecuting = true;
          
          if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
             Print("ERRO AO ENVIAR ORDEM DE VENDA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
-            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());  
+            
+            isExecuting = false; 
+            return false;    
          } else {
             Print("ORDEM DE VENDA ENVIADA NO PREÇO: ", preco);
             Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+            
+            isExecuting = false;
+            return true;
          }      
       }
    } else {
@@ -933,23 +950,37 @@ bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double precoBruto,
       
       if (SymbolInfoGenericFunctions.Bid() > preco) {      
          TradeGenericFunctions.BuyLimit(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM BUYLIMIT");
+         isExecuting = true;
          
          if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
             Print("ERRO AO ENVIAR ORDEM DE COMPRA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
-            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+            Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());   
+            
+            isExecuting = false;
+            return false;    
          } else {
             Print("ORDEM DE COMPRA ENVIADA NO PREÇO: ", preco);
             Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+            
+            isExecuting = false;
+            return true;
          }
       } else {
          TradeGenericFunctions.BuyStop(lote, preco, symbol, stopLossLocal, takeProfitLocal, ORDER_TIME_DAY, 0, "ORDEM BUYSTOP");
+         isExecuting = true;
          
          if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE && TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_PLACED) {
             Print("ERRO AO ENVIAR ORDEM DE COMPRA, CÓDIGO DE ERRO: ", TradeGenericFunctions.ResultRetcode());
             Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());       
+            
+            isExecuting = false;
+            return false;
          } else {
             Print("ORDEM DE COMPRA ENVIADA NO PREÇO: ", preco);
             Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+            
+            isExecuting = false;
+            return true;
          }      
       }
    }
