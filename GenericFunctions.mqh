@@ -570,6 +570,39 @@ ENUM_DEAL_TYPE getLastOrderType(string symbol, ulong magicNumber, ENUM_TIMEFRAME
     return dealLastType;
 }
 
+//BUSCA O RESULTADO DA ULTIMA OPERACAO ##############################################################################################################################################
+double getLastOrderResult(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe) {
+    datetime end = TimeCurrent();
+    datetime start = iTime(symbol, timeframe, iBars(symbol, timeframe));
+
+    HistorySelect(start, end);
+    int dealsTotal = HistoryDealsTotal();
+    datetime controlTime = iTime(symbol, timeframe, iBars(symbol, timeframe));
+    double result = 0;
+
+    for (int i = dealsTotal - 1; i >= 0; i--) {
+        ulong dealTicket = HistoryDealGetTicket(i);
+
+        if (dealTicket > 0) {
+            string   dealSymbol        = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
+            ulong    dealMagicNumber   = HistoryDealGetInteger(dealTicket, DEAL_MAGIC);
+            double   dealProfit        = HistoryDealGetDouble(dealTicket, DEAL_PROFIT);
+            ulong    dealType          = HistoryDealGetInteger(dealTicket, DEAL_TYPE);
+            ulong    dealEntry         = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+            datetime dealTime          = (datetime) HistoryDealGetInteger(dealTicket, DEAL_TIME);
+
+            if (dealSymbol == symbol && dealMagicNumber == magicNumber) { 
+                if (dealTime > controlTime && dealEntry == DEAL_ENTRY_IN) {
+                    controlTime = dealTime;
+                    result = dealProfit;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
 //BUSCA O TICKET DA ULTIMA POSIÇÃO DE COMPRA ABERTA ##############################################################################################################################################
 ulong getTicketLastBuyPositionOpen(string symbol, ulong magicNumber) {
     ulong positionTicketLastPosition = 0;
