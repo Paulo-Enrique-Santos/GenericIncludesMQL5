@@ -298,16 +298,29 @@ bool isProfitLimit(string symbol, ulong magicNumber, double gainLimit, double lo
     double positionsProfit = getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_BUY) + getProfitAllPositions(symbol, magicNumber, POSITION_TYPE_SELL);
     double historicProfit = getProfitHistoric(symbol, magicNumber, PERIOD_D1, false);
     double profitTotal = positionsProfit + historicProfit;
+    bool   isNewDay = positionsProfit == 0 && historicProfit == 0;
+    static bool isPause = false;
+    
+    if (isNewDay) {
+      isPause = false;
+    }
+    
+    if (isPause) {
+      closeAllPositions(symbol, magicNumber);
+      return true;
+    }
 
     if (gainLimit <= profitTotal && gainLimit > 0) {
         closeAllPositions(symbol, magicNumber);
         Print("ORDENS FECHADAS APÓS ATINGIR O LUCRO DE: ", gainLimit, " LUCRO ATUAL: ", profitTotal);
+        isPause = true;
         return true;
     }
 
     if ((lossLimit * -1) >= profitTotal && lossLimit > 0) {
         closeAllPositions(symbol, magicNumber);
         Print("ORDENS FECHADAS APÓS ATINGIR A PERDA DE: ", lossLimit, " PERDA ATUAL: ", profitTotal);
+        isPause = true;
         return true;
     }
 
@@ -315,7 +328,7 @@ bool isProfitLimit(string symbol, ulong magicNumber, double gainLimit, double lo
 }
 
 //RETORNA O TOTAL DE LUCRO ##############################################################################################################################################
-double getProfitHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe, bool isTotalProfit) {
+double getProfitHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe, bool isTotalProfit = false) {
     int candle = isTotalProfit ? iBars(symbol,timeframe) : 0;
     datetime end = TimeCurrent();
     datetime start = iTime(symbol, timeframe, candle);
@@ -342,7 +355,7 @@ double getProfitHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timef
 }
 
 //NÚMERO DE GAINS ##############################################################################################################################################
-int getGainsHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe, bool isTotalProfit) {
+int getGainsHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe, bool isTotalProfit = false) {
     int candle = isTotalProfit ? iBars(symbol,timeframe) : 0;
     datetime end = TimeCurrent();
     datetime start = iTime(symbol, timeframe, candle);
@@ -369,7 +382,7 @@ int getGainsHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe
 }
 
 //NÚMERO DE LOSS ##############################################################################################################################################
-int getLossHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe, bool isTotalProfit) {
+int getLossHistoric(string symbol, ulong magicNumber, ENUM_TIMEFRAMES timeframe, bool isTotalProfit = false) {
     int candle = isTotalProfit ? iBars(symbol,timeframe) : 0;
     datetime end = TimeCurrent();
     datetime start = iTime(symbol, timeframe, candle);
@@ -591,8 +604,8 @@ double getLastOrderResult(string symbol, ulong magicNumber, ENUM_TIMEFRAMES time
             ulong    dealEntry         = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
             datetime dealTime          = (datetime) HistoryDealGetInteger(dealTicket, DEAL_TIME);
 
-            if (dealSymbol == symbol && dealMagicNumber == magicNumber) { 
-                if (dealTime > controlTime && dealEntry == DEAL_ENTRY_IN) {
+            if (dealSymbol == symbol && dealMagicNumber == magicNumber) {
+                if (dealTime > controlTime && dealEntry == DEAL_ENTRY_OUT) {
                     controlTime = dealTime;
                     result = dealProfit;
                 }
