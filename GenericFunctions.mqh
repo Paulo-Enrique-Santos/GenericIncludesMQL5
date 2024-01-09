@@ -82,6 +82,7 @@ bool sellMarket(ulong magicNumber, string symbol, double volume, double take, do
 bool closeAllPositions(string symbol, ulong magicNumber) {
     for (int i = PositionsTotal() - 1 ; i >= 0; i--) {
         if (!PositionSelectByTicket(PositionGetTicket(i))) {
+            closeAllPositions(symbol, magicNumber);
             return false;
         }
 
@@ -95,6 +96,7 @@ bool closeAllPositions(string symbol, ulong magicNumber) {
             if (TradeGenericFunctions.ResultRetcode() != TRADE_RETCODE_DONE) {
                 Print("PROBLEMAS PARA FECHAR A POSIÇÃO COM TICKET: ", positionTicket);
                 Print("COMENTÁRIO DA CORRETORA: ", TradeGenericFunctions.ResultComment());
+                closeAllPositions(symbol, magicNumber);
                 return false;
             }
         }
@@ -1032,4 +1034,34 @@ bool sendOrders(ulong magicNumber, ENUM_OPERATIONS_TYPE type, double precoBruto,
    }
    
    return false;
+}
+
+//BUSCA QUANTAS OPERACOES FORAM FEITAS NO DIA ##############################################################################################################################################
+int getTotalOperationsOnTheDay(string symbol, ulong magicNumber) {
+    datetime end = TimeCurrent();
+    datetime start = iTime(symbol, PERIOD_D1, 0);
+
+    HistorySelect(start, end);
+    int dealsTotal = HistoryDealsTotal();
+    
+    int total = 0;
+
+    for (int i = dealsTotal - 1; i >= 0; i--) {
+        ulong dealTicket = HistoryDealGetTicket(i);
+
+        if (dealTicket > 0) {
+            string   dealSymbol        = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
+            ulong    dealMagicNumber   = HistoryDealGetInteger(dealTicket, DEAL_MAGIC);
+            ulong    dealType          = HistoryDealGetInteger(dealTicket, DEAL_TYPE);
+            ulong    dealEntry         = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+
+            if (dealSymbol == symbol && dealMagicNumber == magicNumber) { 
+                if (dealEntry == DEAL_ENTRY_IN) {
+                    total++;
+                }
+            }
+        }
+    }
+
+    return total;
 }
